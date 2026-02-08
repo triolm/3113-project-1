@@ -3,6 +3,7 @@
 #include <iostream>
 
 // are we allowed to define our own functions
+//unload texture
 
 // Global Constants
 constexpr int   SCREEN_WIDTH  = 1600 / 2,
@@ -24,6 +25,8 @@ constexpr char MOUNT3[] = "assets/m3.png";
 constexpr char TRAIN[] = "assets/train.png";
 constexpr char TRACK[] = "assets/track.png";
 constexpr char STEAM[] = "assets/steam.png";
+constexpr char WHEEL[] = "assets/wheel.png";
+constexpr char STICK[] = "assets/stick.png";
 
 constexpr float MOUNT1_SPEED = 150;
 constexpr float MOUNT2_SPEED = 70;
@@ -40,8 +43,8 @@ Vector2   gPosition      = ORIGIN;
 Vector2   gScale         = BASE_SIZE;
 float     gPreviousTicks = 0.0f;
 float     gParallaxOffset = 0.0f;
-float     gSteamPos      = 5.0f; 
-// float     gSteamSize      = 20.0f; 
+float     gSteamPos      = 2.0f; 
+float     gWheelRot      = 0.0f; 
 
 // Function Declarations
 void initialise();
@@ -58,6 +61,8 @@ Texture2D gMount3;
 Texture2D gTrain;
 Texture2D gTrack;
 Texture2D gSteam;
+Texture2D gWheel;
+Texture2D gStick;
 
 // Function Definitions
 void initialise()
@@ -71,6 +76,8 @@ void initialise()
     gTrain = LoadTexture(TRAIN);
     gTrack = LoadTexture(TRACK);
     gSteam = LoadTexture(STEAM);
+    gWheel = LoadTexture(WHEEL);
+    gStick = LoadTexture(STICK);
 
     SetTargetFPS(FPS);
 }
@@ -89,12 +96,11 @@ void update()
 
     gParallaxOffset += 1.5f * deltaTime;
     gSteamPos += 40.0f * deltaTime;
-    // gSteamSize += 3.0f * deltaTime;
+    gWheelRot += 300.0f * deltaTime;
     
 
-    if(gSteamPos > 40) {
-        gSteamPos = 5;
-        // gSteamSize = 20;
+    if(gSteamPos > 37) {
+        gSteamPos = 2;
     }
 
 }
@@ -221,7 +227,7 @@ void render()
         float steamX = SCREEN_WIDTH - 160 - thisPos;
         float steamY = -20*std::log(thisPos/30) + SCREEN_HEIGHT - 240;
 
-        float thisSize = 20 + (thisPos / 100) * 10;
+        float thisSize = 20 + (thisPos / 100) * 20;
 
         Rectangle steamDestinationArea = { 
             steamX - thisSize/2, steamY - thisSize/2,
@@ -248,14 +254,81 @@ void render()
     };
 
     Rectangle trainDestinationArea = { 
-        0, SCREEN_HEIGHT - scaleHeight(gTrain) - 55,
-        SCREEN_WIDTH * (4195.0f/4845.0f), scaleHeight(gTrain)
+        0, SCREEN_HEIGHT - 175,
+        SCREEN_WIDTH * (4195.0f/4839.0f), SCREEN_HEIGHT * (721.0f/2721.0f)
     };
    
     DrawTexturePro(
         gTrain, 
         trainTextureArea,
         trainDestinationArea,
+        {0,0}, 0, WHITE
+    );
+
+    Rectangle wheelTextureArea =  {
+        // top-left corner
+        0,0,
+        // bottom-right corner (of texture)
+        static_cast<float>(gWheel.width), 
+        static_cast<float>(gWheel.height),
+    };
+    
+    float wheelSize = SCREEN_WIDTH * (236.0f/4839.0f);
+
+    Rectangle wheelDestinationArea = { 
+        604, SCREEN_HEIGHT - 77,
+        wheelSize, wheelSize
+    };
+    DrawTexturePro(
+        gWheel, 
+        wheelTextureArea,
+        wheelDestinationArea,
+        {wheelSize/2, wheelSize/2}, gWheelRot, WHITE
+    );
+
+    Rectangle wheelDestinationArea2 = { 
+        554, SCREEN_HEIGHT - 77,
+        wheelSize, wheelSize
+    };
+    DrawTexturePro(
+        gWheel, 
+        wheelTextureArea,
+        wheelDestinationArea2,
+        {wheelSize/2, wheelSize/2}, gWheelRot, WHITE
+    );
+
+    Rectangle wheelDestinationArea3 = { 
+        503, SCREEN_HEIGHT - 77,
+        wheelSize, wheelSize
+    };
+    DrawTexturePro(
+        gWheel, 
+        wheelTextureArea,
+        wheelDestinationArea3,
+        {wheelSize/2, wheelSize/2}, gWheelRot, WHITE
+    );
+
+
+    Rectangle stickTextureArea =  {
+        // top-left corner
+        0,0,
+        // bottom-right corner (of texture)
+        static_cast<float>(gStick.width), 
+        static_cast<float>(gStick.height),
+    };
+    
+    float stickWidth = SCREEN_WIDTH * (645.0f/4839.0f);
+    float stickHeight = SCREEN_WIDTH * (37.0f/4839.0f);
+
+    Rectangle stickDestinationArea = { 
+        500 + (float)cos(gWheelRot*0.0174533) * 10.0f, 
+        SCREEN_HEIGHT - 80 + (float)sin(gWheelRot*0.0174533) * 10.0f,
+        stickWidth, stickHeight
+    };
+    DrawTexturePro(
+        gStick, 
+        stickTextureArea,
+        stickDestinationArea,
         {0,0}, 0, WHITE
     );
 
