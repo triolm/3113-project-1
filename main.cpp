@@ -33,7 +33,6 @@ constexpr float MOUNT2_SPEED = 70;
 constexpr float MOUNT3_SPEED = 30;
 constexpr float TRACK_SPEED = 400;
 
-
 // Global Variables
 AppStatus gAppStatus     = RUNNING;
 float     gScaleFactor   = SIZE,
@@ -45,6 +44,7 @@ float     gPreviousTicks = 0.0f;
 float     gParallaxOffset = 0.0f;
 float     gSteamPos      = 2.0f; 
 float     gWheelRot      = 0.0f; 
+float     gTrainOffsetTime   = 0.0f; 
 
 // Function Declarations
 void initialise();
@@ -97,6 +97,7 @@ void update()
     gParallaxOffset += 1.5f * deltaTime;
     gSteamPos += 40.0f * deltaTime;
     gWheelRot += 300.0f * deltaTime;
+    gTrainOffsetTime += 0.25f * deltaTime;
     
 
     if(gSteamPos > 37) {
@@ -107,6 +108,51 @@ void update()
 
 float scaleHeight(Texture2D t){
     return (static_cast<float>(t.height)/static_cast<float>(t.width)) * SCREEN_WIDTH;
+}
+
+void renderMountain(Texture2D mountain, float speed){
+    Rectangle textureArea =  {
+        // top-left corner
+        gParallaxOffset * speed,0,
+        // bottom-right corner (of texture)
+        static_cast<float>(mountain.width), 
+        static_cast<float>(mountain.height),
+    };
+
+    Rectangle destinationArea = { 
+        0, SCREEN_HEIGHT - scaleHeight(mountain),
+        SCREEN_WIDTH, scaleHeight(mountain)
+    };
+   
+    DrawTexturePro(
+        mountain, 
+        textureArea,
+        destinationArea,
+        {0,0}, 0, WHITE
+    );
+}
+
+void renderWheel(float trainOffset, float xOffset){
+    Rectangle wheelTextureArea =  {
+        // top-left corner
+        0,0,
+        // bottom-right corner (of texture)
+        static_cast<float>(gWheel.width), 
+        static_cast<float>(gWheel.height),
+    };
+    
+    float wheelSize = SCREEN_WIDTH * (236.0f/4839.0f);
+
+    Rectangle wheelDestinationArea = { 
+        trainOffset + xOffset, SCREEN_HEIGHT - 77,
+        wheelSize, wheelSize
+    };
+    DrawTexturePro(
+        gWheel, 
+        wheelTextureArea,
+        wheelDestinationArea,
+        {wheelSize/2, wheelSize/2}, gWheelRot, WHITE
+    );
 }
 
 void render()
@@ -131,65 +177,11 @@ void render()
     );
 
 
-    Rectangle mount3TextureArea =  {
-        // top-left corner
-        gParallaxOffset * MOUNT3_SPEED,0,
-        // bottom-right corner (of texture)
-        static_cast<float>(gMount3.width), 
-        static_cast<float>(gMount3.height),
-    };
+    renderMountain(gMount3, MOUNT3_SPEED);
+    renderMountain(gMount2, MOUNT2_SPEED);
+    renderMountain(gMount1, MOUNT1_SPEED);
 
-    Rectangle mount3DestinationArea = { 
-        0, SCREEN_HEIGHT - scaleHeight(gMount3),
-        SCREEN_WIDTH, scaleHeight(gMount3)
-    };
-   
-    DrawTexturePro(
-        gMount3, 
-        mount3TextureArea,
-        mount3DestinationArea,
-        {0,0}, 0, WHITE
-    );
 
-    Rectangle mount2TextureArea =  {
-        // top-left corner
-        gParallaxOffset * MOUNT2_SPEED,0,
-        // bottom-right corner (of texture)
-        static_cast<float>(gMount2.width), 
-        static_cast<float>(gMount2.height),
-    };
-
-    Rectangle mount2DestinationArea = { 
-        0, SCREEN_HEIGHT - scaleHeight(gMount2),
-        SCREEN_WIDTH, scaleHeight(gMount2)
-    };
-   
-    DrawTexturePro(
-        gMount2, 
-        mount2TextureArea,
-        mount2DestinationArea,
-        {0,0}, 0, WHITE
-    );
-
-    Rectangle mount1TextureArea =  {
-        // top-left corner
-        gParallaxOffset * MOUNT1_SPEED,0,
-        // bottom-right corner (of texture)
-        static_cast<float>(gMount1.width), 
-        static_cast<float>(gMount1.height),
-    };
-
-    Rectangle mount1DestinationArea = { 
-        0, SCREEN_HEIGHT - scaleHeight(gMount1),
-        SCREEN_WIDTH, scaleHeight(gMount1)
-    };
-   
-    DrawTexturePro(
-        gMount1, 
-        mount1TextureArea,
-        mount1DestinationArea,
-        {0,0}, 0, WHITE
-    );
     Rectangle trackTextureArea =  {
         // top-left corner
         gParallaxOffset * TRACK_SPEED,0,
@@ -209,6 +201,8 @@ void render()
         trackDestinationArea,
         {0,0}, 0, WHITE
     );
+
+    float trainOffset = -50* (1-sin(gTrainOffsetTime));
 
     for (size_t i = 0; i < 8; i ++){
 
@@ -230,7 +224,7 @@ void render()
         float thisSize = 20 + (thisPos / 100) * 20;
 
         Rectangle steamDestinationArea = { 
-            steamX - thisSize/2, steamY - thisSize/2,
+            trainOffset + steamX - thisSize/2, steamY - thisSize/2,
             thisSize, thisSize
         };
     
@@ -254,7 +248,7 @@ void render()
     };
 
     Rectangle trainDestinationArea = { 
-        0, SCREEN_HEIGHT - 175,
+        trainOffset , SCREEN_HEIGHT - 175,
         SCREEN_WIDTH * (4195.0f/4839.0f), SCREEN_HEIGHT * (721.0f/2721.0f)
     };
    
@@ -265,48 +259,10 @@ void render()
         {0,0}, 0, WHITE
     );
 
-    Rectangle wheelTextureArea =  {
-        // top-left corner
-        0,0,
-        // bottom-right corner (of texture)
-        static_cast<float>(gWheel.width), 
-        static_cast<float>(gWheel.height),
-    };
-    
-    float wheelSize = SCREEN_WIDTH * (236.0f/4839.0f);
+    renderWheel(trainOffset, 604);
+    renderWheel(trainOffset, 554);
+    renderWheel(trainOffset, 503);
 
-    Rectangle wheelDestinationArea = { 
-        604, SCREEN_HEIGHT - 77,
-        wheelSize, wheelSize
-    };
-    DrawTexturePro(
-        gWheel, 
-        wheelTextureArea,
-        wheelDestinationArea,
-        {wheelSize/2, wheelSize/2}, gWheelRot, WHITE
-    );
-
-    Rectangle wheelDestinationArea2 = { 
-        554, SCREEN_HEIGHT - 77,
-        wheelSize, wheelSize
-    };
-    DrawTexturePro(
-        gWheel, 
-        wheelTextureArea,
-        wheelDestinationArea2,
-        {wheelSize/2, wheelSize/2}, gWheelRot, WHITE
-    );
-
-    Rectangle wheelDestinationArea3 = { 
-        503, SCREEN_HEIGHT - 77,
-        wheelSize, wheelSize
-    };
-    DrawTexturePro(
-        gWheel, 
-        wheelTextureArea,
-        wheelDestinationArea3,
-        {wheelSize/2, wheelSize/2}, gWheelRot, WHITE
-    );
 
 
     Rectangle stickTextureArea =  {
@@ -321,7 +277,7 @@ void render()
     float stickHeight = SCREEN_WIDTH * (37.0f/4839.0f);
 
     Rectangle stickDestinationArea = { 
-        500 + (float)cos(gWheelRot*0.0174533) * 10.0f, 
+        trainOffset + 500 + (float)cos(gWheelRot*0.0174533) * 10.0f, 
         SCREEN_HEIGHT - 80 + (float)sin(gWheelRot*0.0174533) * 10.0f,
         stickWidth, stickHeight
     };
