@@ -22,7 +22,7 @@ constexpr char BG[] = "assets/bg.png";
 constexpr char MOUNT1[] = "assets/m1.png";
 constexpr char MOUNT2[] = "assets/m2.png";
 constexpr char MOUNT3[] = "assets/m3.png";
-constexpr char TRAIN[] = "assets/train.png";
+constexpr char TRAIN[] = "assets/train2.png";
 constexpr char TRACK[] = "assets/track.png";
 constexpr char STEAM[] = "assets/steam.png";
 constexpr char WHEEL[] = "assets/wheel.png";
@@ -191,7 +191,7 @@ void render()
     };
 
     Rectangle trackDestinationArea = { 
-        0, SCREEN_HEIGHT - scaleHeight(gTrack) - 49,
+        0, SCREEN_HEIGHT - scaleHeight(gTrack) - 50,
         SCREEN_WIDTH, scaleHeight(gTrack)
     };
    
@@ -219,7 +219,7 @@ void render()
         // yeah i know the position is slightly offset. i'm trying, ok.
 
         float steamX = SCREEN_WIDTH - 160 - thisPos;
-        float steamY = -20*std::log(thisPos/30) + SCREEN_HEIGHT - 240;
+        float steamY = -15*std::log(thisPos/30) + SCREEN_HEIGHT - 220;
 
         float thisSize = 20 + (thisPos / 100) * 20;
 
