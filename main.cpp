@@ -12,16 +12,25 @@ constexpr int   SCREEN_WIDTH  = 1600 / 2,
                 SIZE          = 200,
                 FRAME_LIMIT   = 100;
 constexpr float MAX_AMP       = 10.0f;
+constexpr float TEXTURE_SCALE_WIDTH = 4838.0f;
 
 constexpr char    BG_COLOUR[] = "#FFFFFF";
 constexpr Vector2 ORIGIN      = { SCREEN_WIDTH / 2, SCREEN_HEIGHT / 2 };
 constexpr Vector2 BASE_SIZE   = { (float) SIZE, (float) SIZE };
 
 // Image owned by Gorillaz @see https://gorillaz.com/
-constexpr char BG[] = "assets/bg.png";
-constexpr char MOUNT1[] = "assets/m1.png";
-constexpr char MOUNT2[] = "assets/m2.png";
-constexpr char MOUNT3[] = "assets/m3.png";
+constexpr char BG_DAY[] = "assets/bg_day.png";
+constexpr char BG_EVE[] = "assets/bg_eve.png";
+constexpr char BG_NIGHT[] = "assets/bg_night.png";
+constexpr char MOUNT1_DAY[] = "assets/mountains/m1_day.png";
+constexpr char MOUNT2_DAY[] = "assets/mountains/m2_day.png";
+constexpr char MOUNT3_DAY[] = "assets/mountains/m3_day.png";
+constexpr char MOUNT1_EVE[] = "assets/mountains/m1_eve.png";
+constexpr char MOUNT2_EVE[] = "assets/mountains/m2_eve.png";
+constexpr char MOUNT3_EVE[] = "assets/mountains/m3_eve.png";
+constexpr char MOUNT1_NIGHT[] = "assets/mountains/m1_night.png";
+constexpr char MOUNT2_NIGHT[] = "assets/mountains/m2_night.png";
+constexpr char MOUNT3_NIGHT[] = "assets/mountains/m3_night.png";
 constexpr char TRAIN[] = "assets/train2.png";
 constexpr char TRACK[] = "assets/track.png";
 constexpr char STEAM[] = "assets/steam.png";
@@ -32,6 +41,8 @@ constexpr float MOUNT1_SPEED = 150;
 constexpr float MOUNT2_SPEED = 70;
 constexpr float MOUNT3_SPEED = 30;
 constexpr float TRACK_SPEED = 400;
+
+enum TIME {DAY,EVE, NIGHT, MORN};
 
 // Global Variables
 AppStatus gAppStatus     = RUNNING;
@@ -45,6 +56,9 @@ float     gParallaxOffset = 0.0f;
 float     gSteamPos      = 2.0f; 
 float     gWheelRot      = 0.0f; 
 float     gTrainOffsetTime   = 0.0f; 
+TIME      gCurrentTime = NIGHT;
+float     gDayTime = 0;
+float     gTransitionPercent = 0;
 
 // Function Declarations
 void initialise();
@@ -54,10 +68,18 @@ void render();
 void shutdown();
 
 
-Texture2D gBackground;
-Texture2D gMount1;
-Texture2D gMount2;
-Texture2D gMount3;
+Texture2D gBg_day;
+Texture2D gBg_eve;
+Texture2D gBg_night;
+Texture2D gMount1_day;
+Texture2D gMount2_day;
+Texture2D gMount3_day;
+Texture2D gMount1_eve;
+Texture2D gMount2_eve;
+Texture2D gMount3_eve;
+Texture2D gMount1_night;
+Texture2D gMount2_night;
+Texture2D gMount3_night;
 Texture2D gTrain;
 Texture2D gTrack;
 Texture2D gSteam;
@@ -69,10 +91,18 @@ void initialise()
 {
     InitWindow(SCREEN_WIDTH, SCREEN_HEIGHT, "Textures");
 
-    gBackground = LoadTexture(BG);
-    gMount1 = LoadTexture(MOUNT1);
-    gMount2 = LoadTexture(MOUNT2);
-    gMount3 = LoadTexture(MOUNT3);
+    gBg_day = LoadTexture(BG_DAY);
+    gBg_eve = LoadTexture(BG_EVE);
+    gBg_night = LoadTexture(BG_NIGHT);
+    gMount1_day = LoadTexture(MOUNT1_DAY);
+    gMount2_day = LoadTexture(MOUNT2_DAY);
+    gMount3_day = LoadTexture(MOUNT3_DAY);
+    gMount1_eve = LoadTexture(MOUNT1_EVE);
+    gMount2_eve = LoadTexture(MOUNT2_EVE);
+    gMount3_eve = LoadTexture(MOUNT3_EVE);
+    gMount1_night = LoadTexture(MOUNT1_NIGHT);
+    gMount2_night = LoadTexture(MOUNT2_NIGHT);
+    gMount3_night = LoadTexture(MOUNT3_NIGHT);
     gTrain = LoadTexture(TRAIN);
     gTrack = LoadTexture(TRACK);
     gSteam = LoadTexture(STEAM);
@@ -98,7 +128,33 @@ void update()
     gSteamPos += 40.0f * deltaTime;
     gWheelRot += 300.0f * deltaTime;
     gTrainOffsetTime += 0.25f * deltaTime;
+    gDayTime += 30 * deltaTime;
     
+    float dayLength = 100;
+    if(gDayTime > 4 * dayLength) gDayTime = 0;
+    else if(gDayTime > 3 * dayLength) {
+        if(gCurrentTime != DAY) gTransitionPercent = 1; 
+        gCurrentTime = DAY;
+    }
+    else if(gDayTime > 2 * dayLength) {
+        if(gCurrentTime != MORN) gTransitionPercent = 1; 
+        gCurrentTime = MORN;
+    }
+    else if(gDayTime > 1 * dayLength) {
+        if(gCurrentTime != NIGHT) gTransitionPercent = 1; 
+        gCurrentTime = NIGHT;
+    }
+    else if(gDayTime > 0 * dayLength) {
+        if(gCurrentTime != EVE) gTransitionPercent = 1; 
+        gCurrentTime = EVE;
+    }
+
+    gTransitionPercent -= 2.0f * deltaTime;
+
+    printf("%f\n", gTransitionPercent);
+
+    // printf("%f\n", gDayTime);
+    // printf("%f\n", gCurrentTime);
 
     if(gSteamPos > 37) {
         gSteamPos = 2;
@@ -106,33 +162,56 @@ void update()
 
 }
 
-float scaleHeight(Texture2D t){
+float scaleHeight(Texture2D& t){
     return (static_cast<float>(t.height)/static_cast<float>(t.width)) * SCREEN_WIDTH;
 }
 
-void renderMountain(Texture2D mountain, float speed){
+void renderMountain(Texture2D& day, Texture2D& eve, Texture2D& night,  float speed){
+    Texture2D* mountain = &day;
+    if(gCurrentTime == EVE) mountain = &eve;
+    if(gCurrentTime == MORN) mountain = &eve;
+    if(gCurrentTime == NIGHT) mountain = &night;
+
     Rectangle textureArea =  {
         // top-left corner
         gParallaxOffset * speed,0,
         // bottom-right corner (of texture)
-        static_cast<float>(mountain.width), 
-        static_cast<float>(mountain.height),
+        static_cast<float>(mountain->width), 
+        static_cast<float>(mountain->height),
     };
 
     Rectangle destinationArea = { 
-        0, SCREEN_HEIGHT - scaleHeight(mountain),
-        SCREEN_WIDTH, scaleHeight(mountain)
+        0, SCREEN_HEIGHT - scaleHeight(*mountain),
+        SCREEN_WIDTH, scaleHeight(*mountain)
     };
    
     DrawTexturePro(
-        mountain, 
+        *mountain, 
         textureArea,
         destinationArea,
         {0,0}, 0, WHITE
     );
+
+    if(gTransitionPercent > 0){
+        Texture2D* prevMountain = &day;
+        if(gCurrentTime == NIGHT) prevMountain = &eve;
+        if(gCurrentTime == DAY) prevMountain = &eve;
+        if(gCurrentTime == MORN) prevMountain = &night;
+
+        Color tint = WHITE;
+        tint.a = (gTransitionPercent * 255.0f);
+        // printf("%i\n", tint.a);
+        // printf("%i\n", gTransitionPercent);
+        DrawTexturePro(
+            *prevMountain, 
+            textureArea,
+            destinationArea,
+            {0,0}, 0, tint
+        );
+    }
 }
 
-void renderWheel(float trainOffset, float xOffset){
+void renderWheel(float trainOffset, float xOffset, float distFromBottom){
     Rectangle wheelTextureArea =  {
         // top-left corner
         0,0,
@@ -141,69 +220,26 @@ void renderWheel(float trainOffset, float xOffset){
         static_cast<float>(gWheel.height),
     };
     
-    float wheelSize = SCREEN_WIDTH * (236.0f/4839.0f);
+    float wheelSize = SCREEN_WIDTH * (236.0f/TEXTURE_SCALE_WIDTH);
 
     Rectangle wheelDestinationArea = { 
-        trainOffset + xOffset, SCREEN_HEIGHT - 77,
+        trainOffset + xOffset, SCREEN_HEIGHT - distFromBottom,
         wheelSize, wheelSize
     };
+
+    Color tint = WHITE;
+    if(gCurrentTime == NIGHT) tint = GRAY;
+
     DrawTexturePro(
         gWheel, 
         wheelTextureArea,
         wheelDestinationArea,
-        {wheelSize/2, wheelSize/2}, gWheelRot, WHITE
+        {wheelSize/2, wheelSize/2}, gWheelRot, tint
     );
+
 }
 
-void render()
-{
-    BeginDrawing();
-    ClearBackground(ColorFromHex(BG_COLOUR));
-
-    Rectangle bgTextureArea =  {
-        // top-left corner
-         0,0,
-        // bottom-right corner (of texture)
-        static_cast<float>(gBackground.width), 
-        static_cast<float>(gBackground.height)
-    };
-    Rectangle bgDestinationArea = { 0,0, SCREEN_WIDTH, SCREEN_HEIGHT };
-
-     DrawTexturePro(
-        gBackground, 
-        bgTextureArea,
-        bgDestinationArea,
-        {0,0}, 0, WHITE
-    );
-
-
-    renderMountain(gMount3, MOUNT3_SPEED);
-    renderMountain(gMount2, MOUNT2_SPEED);
-    renderMountain(gMount1, MOUNT1_SPEED);
-
-
-    Rectangle trackTextureArea =  {
-        // top-left corner
-        gParallaxOffset * TRACK_SPEED,0,
-        // bottom-right corner (of texture)
-        static_cast<float>(gTrack.width), 
-        static_cast<float>(gTrack.height),
-    };
-
-    Rectangle trackDestinationArea = { 
-        0, SCREEN_HEIGHT - scaleHeight(gTrack) - 50,
-        SCREEN_WIDTH, scaleHeight(gTrack)
-    };
-   
-    DrawTexturePro(
-        gTrack, 
-        trackTextureArea,
-        trackDestinationArea,
-        {0,0}, 0, WHITE
-    );
-
-    float trainOffset = -50* (1-sin(gTrainOffsetTime));
-
+void renderSteam(float trainOffset){
     for (size_t i = 0; i < 8; i ++){
 
         float thisPos = gSteamPos + (35*i);
@@ -238,6 +274,110 @@ void render()
             {0,0}, 0, tint
         );
     }
+}
+
+void renderStick(float trainOffset, float distFromBottom, float distFromLeft){
+
+    Rectangle stickTextureArea =  {
+        // top-left corner
+        0,0,
+        // bottom-right corner (of texture)
+        static_cast<float>(gStick.width), 
+        static_cast<float>(gStick.height),
+    };
+    
+    // ratio of stick texture width in pixels to bg texture width in pixels
+    float stickWidth = SCREEN_WIDTH * (645.0f/TEXTURE_SCALE_WIDTH);
+    float stickHeight = SCREEN_WIDTH * (37.0f/TEXTURE_SCALE_WIDTH);
+
+    Rectangle stickDestinationArea = { 
+        // (0.0174533 is the conversion to radians)
+        trainOffset + distFromLeft + (float)cos(gWheelRot*0.0174533) * 10.0f, 
+        SCREEN_HEIGHT - distFromBottom + (float)sin(gWheelRot*0.0174533) * 10.0f,
+        stickWidth, stickHeight
+    };
+
+    Color tint = WHITE;
+    if(gCurrentTime == NIGHT) tint = GRAY;
+
+    DrawTexturePro(
+        gStick, 
+        stickTextureArea,
+        stickDestinationArea,
+        {0,0}, 0, tint
+    );
+}
+
+void renderBg(){
+    Texture2D* bg = &gBg_day;
+    if(gCurrentTime == EVE) bg = &gBg_eve;
+    if(gCurrentTime == MORN) bg = &gBg_eve;
+    if(gCurrentTime == NIGHT) bg = &gBg_night;
+
+
+      Rectangle bgTextureArea =  {
+        // top-left corner
+         0,0,
+        // bottom-right corner (of texture)
+        static_cast<float>(bg->width), 
+        static_cast<float>(bg->height)
+    };
+    Rectangle bgDestinationArea = { 0,0, SCREEN_WIDTH, SCREEN_HEIGHT };
+
+     DrawTexturePro(
+        *bg, 
+        bgTextureArea,
+        bgDestinationArea,
+        {0,0}, 0, WHITE
+    );
+
+    if(gTransitionPercent > 0){
+        Texture2D* prevBg = &gBg_day;
+        if(gCurrentTime == NIGHT) prevBg = &gBg_eve;
+        if(gCurrentTime == DAY) prevBg = &gBg_eve;
+        if(gCurrentTime == MORN) prevBg = &gBg_night;
+
+        Color tint = WHITE;
+        tint.a = (gTransitionPercent * 255.0f);
+        // printf("%i\n", tint.a);
+        // printf("%i\n", gTransitionPercent);
+        DrawTexturePro(
+            *prevBg, 
+            bgTextureArea,
+            bgDestinationArea,
+            {0,0}, 0, tint
+        );
+    }
+}
+
+void renderTrack(float distFromBottom){
+    Rectangle trackTextureArea =  {
+        // top-left corner
+        gParallaxOffset * TRACK_SPEED,0,
+        // bottom-right corner (of texture)
+        static_cast<float>(gTrack.width), 
+        static_cast<float>(gTrack.height),
+    };
+
+    Rectangle trackDestinationArea = { 
+        0, SCREEN_HEIGHT - scaleHeight(gTrack) - distFromBottom,
+        SCREEN_WIDTH, scaleHeight(gTrack)
+    };
+
+    Color tint = WHITE;
+    if(gCurrentTime == NIGHT) tint = GRAY;
+   
+    DrawTexturePro(
+        gTrack, 
+        trackTextureArea,
+        trackDestinationArea,
+        {0,0}, 0, tint
+    );
+
+
+}
+
+void renderTrain(float trainOffset, float distFromBottom){
 
     Rectangle trainTextureArea =  {
         // top-left corner
@@ -248,46 +388,48 @@ void render()
     };
 
     Rectangle trainDestinationArea = { 
-        trainOffset , SCREEN_HEIGHT - 175,
-        SCREEN_WIDTH * (4195.0f/4839.0f), SCREEN_HEIGHT * (721.0f/2721.0f)
+        trainOffset , SCREEN_HEIGHT - distFromBottom,
+        // aspect ratio compared to max with of textures
+        SCREEN_WIDTH * (4195.0f/TEXTURE_SCALE_WIDTH), SCREEN_HEIGHT * (721.0f/2721.0f)
     };
    
+    Color tint = WHITE;
+    if(gCurrentTime == NIGHT) tint = GRAY;
+
     DrawTexturePro(
         gTrain, 
         trainTextureArea,
         trainDestinationArea,
-        {0,0}, 0, WHITE
+        {0,0}, 0, tint
     );
+}
 
-    renderWheel(trainOffset, 604);
-    renderWheel(trainOffset, 554);
-    renderWheel(trainOffset, 503);
+void render()
+{   
+    float trainOffset = -50* (1-sin(gTrainOffsetTime));
 
-
-
-    Rectangle stickTextureArea =  {
-        // top-left corner
-        0,0,
-        // bottom-right corner (of texture)
-        static_cast<float>(gStick.width), 
-        static_cast<float>(gStick.height),
-    };
     
-    float stickWidth = SCREEN_WIDTH * (645.0f/4839.0f);
-    float stickHeight = SCREEN_WIDTH * (37.0f/4839.0f);
+    BeginDrawing();
+    ClearBackground(ColorFromHex(BG_COLOUR));
 
-    Rectangle stickDestinationArea = { 
-        trainOffset + 500 + (float)cos(gWheelRot*0.0174533) * 10.0f, 
-        SCREEN_HEIGHT - 80 + (float)sin(gWheelRot*0.0174533) * 10.0f,
-        stickWidth, stickHeight
-    };
-    DrawTexturePro(
-        gStick, 
-        stickTextureArea,
-        stickDestinationArea,
-        {0,0}, 0, WHITE
-    );
+    renderBg();
 
+
+    renderMountain(gMount3_day, gMount3_eve, gMount3_night, MOUNT3_SPEED);
+    renderMountain(gMount2_day, gMount2_eve, gMount2_night, MOUNT2_SPEED);
+    renderMountain(gMount1_day, gMount1_eve, gMount1_night, MOUNT1_SPEED);
+
+    renderTrack(50);
+    
+    renderTrain(trainOffset , 175);
+
+
+    renderWheel(trainOffset, 604, 77);
+    renderWheel(trainOffset, 554, 77);
+    renderWheel(trainOffset, 503, 77);
+
+    renderSteam(trainOffset);
+    renderStick(trainOffset, 80, 500);
 
     EndDrawing();
 }
@@ -297,6 +439,7 @@ void shutdown() { CloseWindow(); }
 
 int main(void)
 {
+
     initialise();
 
     while (gAppStatus == RUNNING)
