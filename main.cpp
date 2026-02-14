@@ -32,6 +32,8 @@ constexpr char MOUNT1_NIGHT[] = "assets/mountains/m1_night.png";
 constexpr char MOUNT2_NIGHT[] = "assets/mountains/m2_night.png";
 constexpr char MOUNT3_NIGHT[] = "assets/mountains/m3_night.png";
 constexpr char TRAIN[] = "assets/train2.png";
+constexpr char SUN[] = "assets/sun.png";
+constexpr char MOON[] = "assets/moon.png";
 constexpr char TRACK[] = "assets/track.png";
 constexpr char STEAM[] = "assets/steam.png";
 constexpr char WHEEL[] = "assets/wheel.png";
@@ -56,8 +58,8 @@ float     gParallaxOffset = 0.0f;
 float     gSteamPos      = 2.0f; 
 float     gWheelRot      = 0.0f; 
 float     gTrainOffsetTime   = 0.0f; 
-TIME      gCurrentTime = NIGHT;
-float     gDayTime = 0;
+TIME      gCurrentTime = EVE;
+float     gDayOffset = 0;
 float     gTransitionPercent = 0;
 
 // Function Declarations
@@ -68,6 +70,8 @@ void render();
 void shutdown();
 
 
+Texture2D gSun;
+Texture2D gMoon;
 Texture2D gBg_day;
 Texture2D gBg_eve;
 Texture2D gBg_night;
@@ -91,6 +95,8 @@ void initialise()
 {
     InitWindow(SCREEN_WIDTH, SCREEN_HEIGHT, "Textures");
 
+    gSun = LoadTexture(SUN);
+    gMoon = LoadTexture(MOON);
     gBg_day = LoadTexture(BG_DAY);
     gBg_eve = LoadTexture(BG_EVE);
     gBg_night = LoadTexture(BG_NIGHT);
@@ -128,33 +134,28 @@ void update()
     gSteamPos += 40.0f * deltaTime;
     gWheelRot += 300.0f * deltaTime;
     gTrainOffsetTime += 0.25f * deltaTime;
-    gDayTime += 30 * deltaTime;
+    gDayOffset += 30 * deltaTime;
     
-    float dayLength = 100;
-    if(gDayTime > 4 * dayLength) gDayTime = 0;
-    else if(gDayTime > 3 * dayLength) {
+    float dayLength = 200;
+    if(gDayOffset > 4 * dayLength) gDayOffset = 0;
+    else if(gDayOffset > 3 * dayLength) {
         if(gCurrentTime != DAY) gTransitionPercent = 1; 
         gCurrentTime = DAY;
     }
-    else if(gDayTime > 2 * dayLength) {
+    else if(gDayOffset > 2 * dayLength) {
         if(gCurrentTime != MORN) gTransitionPercent = 1; 
         gCurrentTime = MORN;
     }
-    else if(gDayTime > 1 * dayLength) {
+    else if(gDayOffset > 1 * dayLength) {
         if(gCurrentTime != NIGHT) gTransitionPercent = 1; 
         gCurrentTime = NIGHT;
     }
-    else if(gDayTime > 0 * dayLength) {
+    else if(gDayOffset > 0 * dayLength) {
         if(gCurrentTime != EVE) gTransitionPercent = 1; 
         gCurrentTime = EVE;
     }
 
-    gTransitionPercent -= 2.0f * deltaTime;
-
-    printf("%f\n", gTransitionPercent);
-
-    // printf("%f\n", gDayTime);
-    // printf("%f\n", gCurrentTime);
+    gTransitionPercent -= 0.5f * deltaTime;
 
     if(gSteamPos > 37) {
         gSteamPos = 2;
@@ -164,6 +165,31 @@ void update()
 
 float scaleHeight(Texture2D& t){
     return (static_cast<float>(t.height)/static_cast<float>(t.width)) * SCREEN_WIDTH;
+}
+
+
+Color tintColor(){
+    Color tint = WHITE;
+    if(gCurrentTime == NIGHT) tint = GRAY;
+    if(gCurrentTime == MORN && gTransitionPercent > 0){
+        tint = Color {
+            // please don't kill me
+            (unsigned char)(255 - gTransitionPercent*125.0f),
+            (unsigned char)(255 - gTransitionPercent*125.0f),
+            (unsigned char)(255 - gTransitionPercent*125.0f),
+            255
+        };
+    }
+    if(gCurrentTime == NIGHT && gTransitionPercent > 0){
+        tint = Color {
+            // please don't kill me
+            (unsigned char)(130 + gTransitionPercent*125.0f),
+            (unsigned char)(130 + gTransitionPercent*125.0f),
+            (unsigned char)(130 + gTransitionPercent*125.0f),
+            255
+        };
+    }
+    return tint;
 }
 
 void renderMountain(Texture2D& day, Texture2D& eve, Texture2D& night,  float speed){
@@ -227,14 +253,12 @@ void renderWheel(float trainOffset, float xOffset, float distFromBottom){
         wheelSize, wheelSize
     };
 
-    Color tint = WHITE;
-    if(gCurrentTime == NIGHT) tint = GRAY;
 
     DrawTexturePro(
         gWheel, 
         wheelTextureArea,
         wheelDestinationArea,
-        {wheelSize/2, wheelSize/2}, gWheelRot, tint
+        {wheelSize/2, wheelSize/2}, gWheelRot, tintColor()
     );
 
 }
@@ -264,7 +288,7 @@ void renderSteam(float trainOffset){
             thisSize, thisSize
         };
     
-        Color tint = WHITE;
+        Color tint = tintColor();
         tint.a = 255 - 255 * (thisPos / 285);
 
         DrawTexturePro(
@@ -304,7 +328,7 @@ void renderStick(float trainOffset, float distFromBottom, float distFromLeft){
         gStick, 
         stickTextureArea,
         stickDestinationArea,
-        {0,0}, 0, tint
+        {0,0}, 0, tintColor()
     );
 }
 
@@ -366,12 +390,21 @@ void renderTrack(float distFromBottom){
 
     Color tint = WHITE;
     if(gCurrentTime == NIGHT) tint = GRAY;
+    if(gCurrentTime == MORN && gTransitionPercent > 0){
+        tint = Color {
+            // please don't kill me
+            (unsigned char)(255 - gTransitionPercent*125.0f),
+            (unsigned char)(255 - gTransitionPercent*125.0f),
+            (unsigned char)(255 - gTransitionPercent*125.0f),
+            255
+        };
+    }
    
     DrawTexturePro(
         gTrack, 
         trackTextureArea,
         trackDestinationArea,
-        {0,0}, 0, tint
+        {0,0}, 0, tintColor()
     );
 
 
@@ -393,14 +426,91 @@ void renderTrain(float trainOffset, float distFromBottom){
         SCREEN_WIDTH * (4195.0f/TEXTURE_SCALE_WIDTH), SCREEN_HEIGHT * (721.0f/2721.0f)
     };
    
-    Color tint = WHITE;
-    if(gCurrentTime == NIGHT) tint = GRAY;
+    
 
     DrawTexturePro(
         gTrain, 
         trainTextureArea,
         trainDestinationArea,
-        {0,0}, 0, tint
+        {0,0}, 0, tintColor()
+    );
+}
+
+void renderSun(float distFromBottom, float distFromLeft){
+
+    float yPos = distFromBottom;
+    float sunSize = SCREEN_HEIGHT * (1008/2721.0f);
+    float sunRange = SCREEN_HEIGHT/2 + sunSize;
+
+    if(gCurrentTime == NIGHT && gTransitionPercent > 0){
+        yPos += sunRange * (1-gTransitionPercent);
+    } else if(gCurrentTime == EVE && gTransitionPercent > 0){
+        yPos -= sunRange * (gTransitionPercent);
+    } else if(gCurrentTime == DAY && gTransitionPercent > 0){
+        yPos -= sunRange * (1-gTransitionPercent);
+    } else if(gCurrentTime == MORN && gTransitionPercent > 0){
+        yPos += sunRange * (gTransitionPercent);
+    } else if(gCurrentTime == DAY || gCurrentTime == NIGHT) return;
+
+    Rectangle trainTextureArea =  {
+        // top-left corner
+        0,0,
+        // bottom-right corner (of texture)
+        static_cast<float>(gSun.width), 
+        static_cast<float>(gSun.height),
+    };
+
+
+    Rectangle trainDestinationArea = { 
+        distFromLeft, yPos,
+        // aspect ratio compared to max with of textures
+        sunSize, sunSize
+    };
+
+    DrawTexturePro(
+        gSun, 
+        trainTextureArea,
+        trainDestinationArea,
+        {trainDestinationArea.width/2,trainDestinationArea.height/2}, 0, WHITE
+    );
+}
+
+
+void renderMoon(float distFromBottom, float distFromLeft){
+
+    float yPos = distFromBottom;
+    float moonRange = SCREEN_HEIGHT/3 + SCREEN_HEIGHT * (1008/2721.0f);
+
+    if(gCurrentTime == MORN && gTransitionPercent > 0){
+        yPos += moonRange * (1-gTransitionPercent);
+    } else if(gCurrentTime == NIGHT && gTransitionPercent > 0){
+        yPos -= moonRange * (gTransitionPercent);
+    } else if(gCurrentTime == MORN && gTransitionPercent > 0){
+        yPos -= moonRange * (1-gTransitionPercent);
+    } else if(gCurrentTime == NIGHT && gTransitionPercent > 0){
+        yPos += moonRange * (gTransitionPercent);
+    } else if(gCurrentTime != NIGHT) return;
+
+    Rectangle trainTextureArea =  {
+        // top-left corner
+        0,0,
+        // bottom-right corner (of texture)
+        static_cast<float>(gMoon.width), 
+        static_cast<float>(gMoon.height),
+    };
+
+
+    Rectangle trainDestinationArea = { 
+        distFromLeft, yPos,
+        // aspect ratio compared to max with of textures
+        SCREEN_WIDTH * (426/TEXTURE_SCALE_WIDTH), SCREEN_HEIGHT * (489/2721.0f)
+    };
+
+    DrawTexturePro(
+        gMoon, 
+        trainTextureArea,
+        trainDestinationArea,
+        {trainDestinationArea.width/2,trainDestinationArea.height/2}, 0, WHITE
     );
 }
 
@@ -414,6 +524,8 @@ void render()
 
     renderBg();
 
+    renderSun(SCREEN_HEIGHT/2.0f,250);
+    renderMoon(SCREEN_HEIGHT/2.0f-100,SCREEN_WIDTH- 250);
 
     renderMountain(gMount3_day, gMount3_eve, gMount3_night, MOUNT3_SPEED);
     renderMountain(gMount2_day, gMount2_eve, gMount2_night, MOUNT2_SPEED);
