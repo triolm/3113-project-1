@@ -112,7 +112,7 @@ Texture2D gStick;
 // Function Definitions
 void initialise()
 {
-    InitWindow(SCREEN_WIDTH, SCREEN_HEIGHT, "Textures");
+    InitWindow(SCREEN_WIDTH, SCREEN_HEIGHT, "Train!!!");
 
     // sorry there are a lot oops
     gSun = LoadTexture(SUN);
