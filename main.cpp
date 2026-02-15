@@ -32,15 +32,15 @@ constexpr Vector2 ORIGIN      = { SCREEN_WIDTH / 2, SCREEN_HEIGHT / 2 };
 constexpr Vector2 BASE_SIZE   = { (float) SIZE, (float) SIZE };
 
 // backgrounds
-constexpr char BG_DAY[] = "assets/bg_day.png";
+constexpr char BG_DAY[]          = "assets/bg_day.png";
 // i like hte word gloaming
-constexpr char BG_GLOAMING[] = "assets/bg_eve.png";
-constexpr char BG_NIGHT[] = "assets/bg_night.png";
+constexpr char BG_GLOAMING[]     = "assets/bg_eve.png";
+constexpr char BG_NIGHT[]        = "assets/bg_night.png";
 
 // daytime mountain textures
-constexpr char MOUNT1_DAY[] = "assets/mountains/m1_day.png";
-constexpr char MOUNT2_DAY[] = "assets/mountains/m2_day.png";
-constexpr char MOUNT3_DAY[] = "assets/mountains/m3_day.png";
+constexpr char MOUNT1_DAY[]      = "assets/mountains/m1_day.png";
+constexpr char MOUNT2_DAY[]      = "assets/mountains/m2_day.png";
+constexpr char MOUNT3_DAY[]      = "assets/mountains/m3_day.png";
 
 // morning/gloaming montain textures
 constexpr char MOUNT1_GLOAMING[] = "assets/mountains/m1_eve.png";
@@ -48,44 +48,41 @@ constexpr char MOUNT2_GLOAMING[] = "assets/mountains/m2_eve.png";
 constexpr char MOUNT3_GLOAMING[] = "assets/mountains/m3_eve.png";
 
 // night time mountain textures
-constexpr char MOUNT1_NIGHT[] = "assets/mountains/m1_night.png";
-constexpr char MOUNT2_NIGHT[] = "assets/mountains/m2_night.png";
-constexpr char MOUNT3_NIGHT[] = "assets/mountains/m3_night.png";
+constexpr char MOUNT1_NIGHT[]    = "assets/mountains/m1_night.png";
+constexpr char MOUNT2_NIGHT[]    = "assets/mountains/m2_night.png";
+constexpr char MOUNT3_NIGHT[]    = "assets/mountains/m3_night.png";
 
 // u can change this to assets/train.png to get rid of the professors
-constexpr char TRAIN[] = "assets/train2.png";
-constexpr char SUN[] = "assets/sun.png";
-constexpr char MOON[] = "assets/moon.png";
-constexpr char TRACK[] = "assets/track.png";
-constexpr char STEAM[] = "assets/steam.png";
-constexpr char WHEEL[] = "assets/wheel.png";
-constexpr char STICK[] = "assets/stick.png";
+constexpr char TRAIN[]           = "assets/train2.png";
+constexpr char SUN[]             = "assets/sun.png";
+constexpr char MOON[]            = "assets/moon.png";
+constexpr char TRACK[]           = "assets/track.png";
+constexpr char STEAM[]           = "assets/steam.png";
+constexpr char WHEEL[]           = "assets/wheel.png";
+constexpr char STICK[]           = "assets/stick.png";
 
 // speeds of parallax items
-constexpr float MOUNT1_SPEED = 150;
-constexpr float MOUNT2_SPEED = 70;
-constexpr float MOUNT3_SPEED = 30;
-constexpr float TRACK_SPEED = 400;
+constexpr float MOUNT1_SPEED  = 150;
+constexpr float MOUNT2_SPEED  = 70;
+constexpr float MOUNT3_SPEED  = 30;
+constexpr float TRACK_SPEED   = 400;
 
 enum TIME {DAY,GLOAMING, NIGHT, DAWN};
 
 // Global Variables
-AppStatus gAppStatus     = RUNNING;
-float     gScaleFactor   = SIZE,
-          gAngle         = 0.0f,
-          gPulseTime     = 0.0f;
-Vector2   gPosition      = ORIGIN;
-Vector2   gScale         = BASE_SIZE;
-float     gPreviousTicks = 0.0f;
-float     gParallaxOffset = 0.0f;
+AppStatus gAppStatus        = RUNNING;
+Vector2   gPosition         = ORIGIN;
+Vector2   gScale            = BASE_SIZE;
+float     gPreviousTicks    = 0.0f,
+          gParallaxOffset   = 0.0f,
 // steam starts at 2 because it's passed into ln and ln(0) is undefined
-float     gSteamPos      = 2.0f; 
-float     gWheelRot      = 0.0f; 
-float     gTrainOffsetTime   = 0.0f; 
-TIME      gTimeOfDay = GLOAMING;
-float     gDayOffset = 100;
-// % of fade between two times of day
-float     gTransitionPercent = 0;
+          gSteamPos         = 2.0f,
+          gWheelRot         = 0.0f,
+          gTrainOffsetTime  = 0.0f,
+          gDayOffset        = 100,
+          // % of fade between two times of day
+          gTransitionPercent = 0;
+TIME      gTimeOfDay         = GLOAMING;
 
 // Function Declarations
 void initialise();
@@ -109,43 +106,34 @@ Texture2D gSteam;
 Texture2D gWheel;
 Texture2D gStick;
 
+float scaleHeight(const Texture2D& t);
+Color tintColor();
+void renderMountain(const Texture2D& day, const Texture2D& gloaming,
+                    const Texture2D& night,  float speed);
+void renderWheel(float trainOffset, float xOffset, float distFromBottom);
+void renderSteam(float trainOffset);
+void renderStick(float trainOffset, float distFromBottom, float distFromLeft);
+void renderBg();
+void renderTrack(float distFromBottom);
+void renderTrain(float trainOffset, float distFromBottom);
+void renderSun(float distFromBottom, float distFromLeft);
+void renderMoon(float distFromBottom, float distFromLeft);
+void loadTextures();
+void unloadTextures();
+
+
 // Function Definitions
-void initialise()
-{
+void initialise(){
     InitWindow(SCREEN_WIDTH, SCREEN_HEIGHT, "Train!!!");
-
-    // sorry there are a lot oops
-    gSun = LoadTexture(SUN);
-    gMoon = LoadTexture(MOON);
-    gBg_day = LoadTexture(BG_DAY);
-    gBg_gloaming = LoadTexture(BG_GLOAMING);
-    gBg_night = LoadTexture(BG_NIGHT);
-    gMount1_day = LoadTexture(MOUNT1_DAY);
-    gMount2_day = LoadTexture(MOUNT2_DAY);
-    gMount3_day = LoadTexture(MOUNT3_DAY);
-    gMount1_gloaming = LoadTexture(MOUNT1_GLOAMING);
-    gMount2_gloaming = LoadTexture(MOUNT2_GLOAMING);
-    gMount3_gloaming = LoadTexture(MOUNT3_GLOAMING);
-    gMount1_night = LoadTexture(MOUNT1_NIGHT);
-    gMount2_night = LoadTexture(MOUNT2_NIGHT);
-    gMount3_night = LoadTexture(MOUNT3_NIGHT);
-    gTrain = LoadTexture(TRAIN);
-    gTrack = LoadTexture(TRACK);
-    gSteam = LoadTexture(STEAM);
-    gWheel = LoadTexture(WHEEL);
-    gStick = LoadTexture(STICK);
-
+    loadTextures();
     SetTargetFPS(FPS);
 }
 
-void processInput() 
-{
+void processInput() {
     if (WindowShouldClose()) gAppStatus = TERMINATED;
 }
 
-void update() 
-{
-
+void update(){
     // calculate delta time
     float ticks = (float)GetTime();
     float deltaTime = ticks - gPreviousTicks;
@@ -193,10 +181,61 @@ void update()
 
 }
 
+void render(){   
+    float trainOffset = -50* (1-sin(gTrainOffsetTime));
+
+    
+    BeginDrawing();
+    ClearBackground(ColorFromHex(BG_COLOUR));
+
+    renderBg();
+
+    renderSun(SCREEN_HEIGHT/2.0f,200);
+    renderMoon(SCREEN_HEIGHT/2.0f-100,SCREEN_WIDTH- 200);
+
+    renderMountain(gMount3_day, gMount3_gloaming, gMount3_night, MOUNT3_SPEED);
+    renderMountain(gMount2_day, gMount2_gloaming, gMount2_night, MOUNT2_SPEED);
+    renderMountain(gMount1_day, gMount1_gloaming, gMount1_night, MOUNT1_SPEED);
+
+    renderTrack(50);
+    renderTrain(trainOffset , 175);
+
+    renderWheel(trainOffset, 604, 77);
+    renderWheel(trainOffset, 554, 77);
+    renderWheel(trainOffset, 503, 77);
+
+    renderSteam(trainOffset);
+    renderStick(trainOffset, 80, 500);
+
+    EndDrawing();
+}
+
+
+void shutdown() { 
+    CloseWindow(); 
+    unloadTextures();
+}
+
+int main(void){
+
+    initialise();
+
+    while (gAppStatus == RUNNING)
+    {
+        processInput();
+        update();
+        render();
+    }
+
+    shutdown();
+
+    return 0;
+}
+
 
 // i drew the textures in inkscape so i'm just making sure they retain the 
 // scale that i drew them at
-float scaleHeight(Texture2D& t){
+float scaleHeight(const Texture2D& t){
     return (static_cast<float>(t.height)/static_cast<float>(t.width)) * SCREEN_WIDTH;
 }
 
@@ -225,8 +264,10 @@ Color tintColor(){
     return tint;
 }
 
-void renderMountain(Texture2D& day, Texture2D& gloaming, Texture2D& night,  float speed){
-    Texture2D* mountain = &day;
+void renderMountain(const Texture2D& day, const Texture2D& gloaming, 
+                    const Texture2D& night,  float speed){
+
+    const Texture2D* mountain = &day;
     if(gTimeOfDay == GLOAMING) mountain = &gloaming;
     if(gTimeOfDay == DAWN) mountain = &gloaming;
     if(gTimeOfDay == NIGHT) mountain = &night;
@@ -253,7 +294,7 @@ void renderMountain(Texture2D& day, Texture2D& gloaming, Texture2D& night,  floa
 
     // previous time of day's  mountain fading out on top of current one
     if(gTransitionPercent > 0){
-        Texture2D* prevMountain = &day;
+        const Texture2D* prevMountain = &day;
         if(gTimeOfDay == NIGHT) prevMountain = &gloaming;
         if(gTimeOfDay == DAY) prevMountain = &gloaming;
         if(gTimeOfDay == DAWN) prevMountain = &night;
@@ -515,7 +556,8 @@ void renderSun(float distFromBottom, float distFromLeft){
         gSun, 
         trainTextureArea,
         trainDestinationArea,
-        {trainDestinationArea.width/2,trainDestinationArea.height/2}, 0, tint
+        {trainDestinationArea.width/2,trainDestinationArea.height/2}, 
+        0, tint
     );
 }
 
@@ -554,45 +596,36 @@ void renderMoon(float distFromBottom, float distFromLeft){
         gMoon, 
         trainTextureArea,
         trainDestinationArea,
-        {trainDestinationArea.width/2,trainDestinationArea.height/2}, 0, WHITE
+        {trainDestinationArea.width/2,trainDestinationArea.height/2}, 
+        0, WHITE
     );
 }
 
-void render()
-{   
-    float trainOffset = -50* (1-sin(gTrainOffsetTime));
-
-    
-    BeginDrawing();
-    ClearBackground(ColorFromHex(BG_COLOUR));
-
-    renderBg();
-
-    renderSun(SCREEN_HEIGHT/2.0f,200);
-    renderMoon(SCREEN_HEIGHT/2.0f-100,SCREEN_WIDTH- 200);
-
-    renderMountain(gMount3_day, gMount3_gloaming, gMount3_night, MOUNT3_SPEED);
-    renderMountain(gMount2_day, gMount2_gloaming, gMount2_night, MOUNT2_SPEED);
-    renderMountain(gMount1_day, gMount1_gloaming, gMount1_night, MOUNT1_SPEED);
-
-    renderTrack(50);
-    
-    renderTrain(trainOffset , 175);
-
-
-    renderWheel(trainOffset, 604, 77);
-    renderWheel(trainOffset, 554, 77);
-    renderWheel(trainOffset, 503, 77);
-
-    renderSteam(trainOffset);
-    renderStick(trainOffset, 80, 500);
-
-    EndDrawing();
+void loadTextures(){
+    // sorry there are a lot oops
+    gSun             = LoadTexture(SUN);
+    gMoon            = LoadTexture(MOON);
+    gBg_day          = LoadTexture(BG_DAY);
+    gBg_gloaming     = LoadTexture(BG_GLOAMING);
+    gBg_night        = LoadTexture(BG_NIGHT);
+    gMount1_day      = LoadTexture(MOUNT1_DAY);
+    gMount2_day      = LoadTexture(MOUNT2_DAY);
+    gMount3_day      = LoadTexture(MOUNT3_DAY);
+    gMount1_gloaming = LoadTexture(MOUNT1_GLOAMING);
+    gMount2_gloaming = LoadTexture(MOUNT2_GLOAMING);
+    gMount3_gloaming = LoadTexture(MOUNT3_GLOAMING);
+    gMount1_night    = LoadTexture(MOUNT1_NIGHT);
+    gMount2_night    = LoadTexture(MOUNT2_NIGHT);
+    gMount3_night    = LoadTexture(MOUNT3_NIGHT);
+    gTrain           = LoadTexture(TRAIN);
+    gTrack           = LoadTexture(TRACK);
+    gSteam           = LoadTexture(STEAM);
+    gWheel           = LoadTexture(WHEEL);
+    gStick           = LoadTexture(STICK);
 }
 
 
-void shutdown() { 
-    CloseWindow(); 
+void unloadTextures(){
     UnloadTexture(gSun);
     UnloadTexture(gMoon);
     UnloadTexture(gBg_day);
@@ -612,21 +645,4 @@ void shutdown() {
     UnloadTexture(gSteam);
     UnloadTexture(gWheel);
     UnloadTexture(gStick);
-}
-
-int main(void)
-{
-
-    initialise();
-
-    while (gAppStatus == RUNNING)
-    {
-        processInput();
-        update();
-        render();
-    }
-
-    shutdown();
-
-    return 0;
 }
