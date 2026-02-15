@@ -1,8 +1,21 @@
+/**
+
+* Author: Marisa Triola
+* Assignment: Simple 2D Scene
+* Date due: February 14, 2026
+* I pledge that I have completed this assignment without
+* collaborating with anyone else, in conformance with the
+* NYU School of Engineering Policies and Procedures on
+* Academic Misconduct.
+
+**/
+
+
+
 #include "CS3113/cs3113.h"
 #include <math.h>
 #include <iostream>
 
-// are we allowed to define our own functions
 //unload texture
 
 // Global Constants
@@ -81,7 +94,7 @@ void update();
 void render();
 void shutdown();
 
-
+// textures
 Texture2D gSun,gMoon;
 
 Texture2D gBg_day, gBg_gloaming, gBg_night;
@@ -194,7 +207,7 @@ Color tintColor(){
     if(gTimeOfDay == NIGHT) tint = GRAY;
     if(gTimeOfDay == DAWN && gTransitionPercent > 0){
         tint = Color {
-            // please don't kill me
+            // i know this is weird please dont kill me
             (unsigned char)(255 - gTransitionPercent*125.0f),
             (unsigned char)(255 - gTransitionPercent*125.0f),
             (unsigned char)(255 - gTransitionPercent*125.0f),
@@ -203,7 +216,6 @@ Color tintColor(){
     }
     if(gTimeOfDay == NIGHT && gTransitionPercent > 0){
         tint = Color {
-            // please don't kill me
             (unsigned char)(130 + gTransitionPercent*125.0f),
             (unsigned char)(130 + gTransitionPercent*125.0f),
             (unsigned char)(130 + gTransitionPercent*125.0f),
@@ -239,6 +251,7 @@ void renderMountain(Texture2D& day, Texture2D& gloaming, Texture2D& night,  floa
         {0,0}, 0, WHITE
     );
 
+    // previous time of day's  mountain fading out on top of current one
     if(gTransitionPercent > 0){
         Texture2D* prevMountain = &day;
         if(gTimeOfDay == NIGHT) prevMountain = &gloaming;
@@ -247,8 +260,6 @@ void renderMountain(Texture2D& day, Texture2D& gloaming, Texture2D& night,  floa
 
         Color tint = WHITE;
         tint.a = (gTransitionPercent * 255.0f);
-        // printf("%i\n", tint.a);
-        // printf("%i\n", gTransitionPercent);
         DrawTexturePro(
             *prevMountain, 
             textureArea,
@@ -273,7 +284,6 @@ void renderWheel(float trainOffset, float xOffset, float distFromBottom){
         trainOffset + xOffset, SCREEN_HEIGHT - distFromBottom,
         wheelSize, wheelSize
     };
-
 
     DrawTexturePro(
         gWheel, 
@@ -376,6 +386,7 @@ void renderBg(){
         {0,0}, 0, WHITE
     );
 
+    // prev time of day's bg fading out
     if(gTransitionPercent > 0){
         Texture2D* prevBg = &gBg_day;
         if(gTimeOfDay == NIGHT) prevBg = &gBg_gloaming;
@@ -466,6 +477,7 @@ void renderSun(float distFromBottom, float distFromLeft){
     float scale = 1;
     Color tint = WHITE;
 
+    // sun does a bucnh of stuff
     if(gTimeOfDay == NIGHT && gTransitionPercent > 0){
         yPos += sunRangeDown * (1-gTransitionPercent);
     } else if(gTimeOfDay == GLOAMING && gTransitionPercent > 0){
@@ -579,7 +591,28 @@ void render()
 }
 
 
-void shutdown() { CloseWindow(); }
+void shutdown() { 
+    CloseWindow(); 
+    UnloadTexture(gSun);
+    UnloadTexture(gMoon);
+    UnloadTexture(gBg_day);
+    UnloadTexture(gBg_gloaming);
+    UnloadTexture(gBg_night);
+    UnloadTexture(gMount1_day);
+    UnloadTexture(gMount2_day);
+    UnloadTexture(gMount3_day);
+    UnloadTexture(gMount1_gloaming);
+    UnloadTexture(gMount2_gloaming);
+    UnloadTexture(gMount3_gloaming);
+    UnloadTexture(gMount1_night);
+    UnloadTexture(gMount2_night);
+    UnloadTexture(gMount3_night);
+    UnloadTexture(gTrain);
+    UnloadTexture(gTrack);
+    UnloadTexture(gSteam);
+    UnloadTexture(gWheel);
+    UnloadTexture(gStick);
+}
 
 int main(void)
 {

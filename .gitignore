@@ -1,4 +1,5 @@
 train.svg
 .vscode/
-assets/
 raylib_app
+.DS_STORE
+train.png
